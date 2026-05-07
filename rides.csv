@@ -1,0 +1,11 @@
+ride_id,driver_id,driver_name,passenger_id,passenger_name,timestamp,fare,profit
+R001,U001,Ali Hassan,U002,Sara Ahmed,2026-01-10 08:15:00,500,50
+R002,U003,Bilal Khan,U004,Ayesha Malik,2026-01-12 09:30:00,700,70
+R003,U005,Usman Raza,U006,Fatima Noor,2026-02-01 07:45:00,450,45
+R004,U011,Tariq Mehmood,U012,Sana Butt,2026-02-02 08:20:00,600,60
+R005,U001,Ali Hassan,U004,Ayesha Malik,2026-03-15 10:00:00,800,80
+R006,U013,Adnan Qureshi,U014,Hina Mir,2026-03-20 11:00:00,550,55
+R007,U005,Usman Raza,U008,Zara Siddiqui,2026-04-05 14:00:00,900,90
+R008,U015,Waqas Hussain,U016,Amna Shahid,2026-04-10 15:00:00,750,75
+R009,U017,Imran Shah,U018,Rabia Awan,2026-05-01 16:00:00,1000,100
+R010,U019,Faisal Iqbal,U020,Nadia Riaz,2026-05-02 17:00:00,1200,120

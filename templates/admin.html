@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sawaari Admin — Control Center</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-card { padding: 1.5rem; margin-bottom: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .chart-container { height: 300px; position: relative; }
+        .nav-links { display: flex; gap: 1.5rem; font-size: 0.9rem; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; transition: 0.3s; }
+        .nav-links a:hover { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo-area">
+            <h1>ADMIN PANEL</h1>
+            <span>Sawaari Operational Dashboard</span>
+        </div>
+        <nav class="nav-links">
+            <a href="/">← Back to App</a>
+            <a href="#" class="active" style="color: var(--primary);">Overview</a>
+            <a href="#history">Ride History</a>
+            <a href="#riders">Rider Profiles</a>
+        </nav>
+    </header>
+
+    <div class="stats-grid">
+        <div class="glass stat-card">
+            <div id="total-rides" class="stat-value" style="color: var(--primary)">0</div>
+            <div class="stat-label">Total Rides Completed</div>
+        </div>
+        <div class="glass stat-card">
+            <div id="total-profit" class="stat-value" style="color: var(--success)">Rs. 0</div>
+            <div class="stat-label">Total Platform Profit</div>
+        </div>
+        <div class="glass stat-card">
+            <div class="stat-value" style="color: var(--secondary)">10%</div>
+            <div class="stat-label">Service Commission</div>
+        </div>
+    </div>
+
+    <div class="grid-3" style="margin-top: 2rem;">
+        <div class="glass admin-card">
+            <h3 style="margin-bottom: 1rem; color: var(--primary);">Monthly Performance</h3>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+        <div class="glass admin-card">
+            <h3 style="margin-bottom: 1rem; color: var(--success);">Profit Growth</h3>
+            <div class="chart-container">
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="history" class="glass admin-card" style="margin-top: 2rem;">
+        <h3 style="margin-bottom: 1.5rem;">Recent Ride History</h3>
+        <div class="rules-table-container">
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Driver</th>
+                        <th>Passenger</th>
+                        <th>Date & Time</th>
+                        <th>Fare (PKR)</th>
+                        <th>Profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6" style="text-align: center;">Loading history...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="riders" class="glass admin-card" style="margin-top: 2rem;">
+        <h3 style="margin-bottom: 1.5rem;">Rider & User Profiles</h3>
+        <div class="rules-table-container" id="profiles-container">
+            <!-- Loaded via JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+window.onload = function() {
+    loadStats();
+    loadHistory();
+    loadProfiles();
+};
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        
+        document.getElementById('total-rides').innerText = data.total_rides;
+        document.getElementById('total-profit').innerText = 'Rs. ' + data.total_profit.toLocaleString();
+        
+        // Performance Chart
+        new Chart(document.getElementById('performanceChart'), {
+            type: 'bar',
+            data: {
+                labels: data.months,
+                datasets: [{
+                    label: 'Rides per Month',
+                    data: data.rides,
+                    backgroundColor: 'rgba(0, 242, 255, 0.5)',
+                    borderColor: '#00f2ff',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#a0a0b0' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#a0a0b0' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // Profit Chart
+        new Chart(document.getElementById('profitChart'), {
+            type: 'line',
+            data: {
+                labels: data.months,
+                datasets: [{
+                    label: 'Profit (PKR)',
+                    data: data.profits,
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#00ff88'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#a0a0b0' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#a0a0b0' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Stats Error:", e);
+    }
+}
+
+async function loadHistory() {
+    const res = await fetch('/api/admin/history');
+    const data = await res.json();
+    const tableBody = document.querySelector('#history-table tbody');
+    
+    tableBody.innerHTML = data.reverse().map(r => `
+        <tr>
+            <td><span class="rule-code">${r.ride_id}</span></td>
+            <td><strong>${r.driver_name}</strong><br><small>${r.driver_id}</small></td>
+            <td><strong>${r.passenger_name}</strong><br><small>${r.passenger_id}</small></td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${r.timestamp}</td>
+            <td>Rs. ${r.fare}</td>
+            <td style="color: var(--success); font-weight: 600;">+Rs. ${r.profit}</td>
+        </tr>
+    `).join('');
+}
+
+async function loadProfiles() {
+    const res = await fetch('/api/users');
+    const data = await res.json();
+    const container = document.getElementById('profiles-container');
+    
+    const cols = ['user_id','name','role','gender','preference'];
+    const header = cols.map(c => `<th>${c.toUpperCase()}</th>`).join('') + '<th>PROFILE</th>';
+    const rows = data.map(u => `
+        <tr>
+            ${cols.map(c => `<td>${u[c]??''}</td>`).join('')}
+            <td><button class="btn-main" style="padding: 4px 8px; font-size: 0.7rem;">View Profile</button></td>
+        </tr>
+    `).join('');
+    
+    container.innerHTML = `<table><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// Initialize
+loadStats();
+loadHistory();
+loadProfiles();
+</script>
+</body>
+</html>

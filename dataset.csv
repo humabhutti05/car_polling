@@ -1,0 +1,22 @@
+user_id,name,role,start_location,end_location,departure_time,available_seats,waypoints,gender,preference,password
+U001,Ali Hassan,driver,Saddar,Gulshan-e-Iqbal,08:00,3,"Nishtar Road,University Road",male,any,123456
+U002,Sara Ahmed,passenger,Saddar,Gulshan-e-Iqbal,08:15,0,"Nishtar Road,University Road",female,female-only,123456
+U003,Bilal Khan,driver,North Nazimabad,Clifton,09:00,2,"Nazimabad,Tariq Road",male,any,123456
+U004,Ayesha Malik,passenger,North Nazimabad,Clifton,09:10,0,"Nazimabad,Tariq Road",female,any,123456
+U005,Usman Raza,driver,Korangi,Defence,07:30,4,"Shah Faisal,Karsaz",male,any,123456
+U006,Fatima Noor,passenger,Korangi,Defence,07:45,0,"Shah Faisal,Karsaz",female,female-only,123456
+U007,Kamran Javed,driver,Malir,Saddar,08:30,2,"Malir City,Drigh Road",male,any,123456
+U008,Zara Siddiqui,passenger,Malir,Saddar,08:30,0,"Malir City,Drigh Road",female,any,123456
+U009,Hassan Ali,driver,Federal B Area,Kemari,10:00,3,"Liaquatabad,Lyari",male,any,123456
+U010,Maria Khan,passenger,Federal B Area,Kemari,10:20,0,"Liaquatabad,Lyari",female,female-only,123456
+U011,Tariq Mehmood,driver,Gulshan-e-Iqbal,Saddar,08:00,2,"University Road,Nishtar Road",male,any,123456
+U012,Sana Butt,passenger,Gulshan-e-Iqbal,Saddar,08:05,0,"University Road,Nishtar Road",female,any,123456
+U013,Adnan Qureshi,driver,Clifton,North Nazimabad,09:30,1,"Tariq Road,Nazimabad",male,any,123456
+U014,Hina Mir,passenger,Clifton,North Nazimabad,09:45,0,"Tariq Road,Nazimabad",female,female-only,123456
+U015,Waqas Hussain,driver,Defence,Korangi,07:00,3,"Karsaz,Shah Faisal",male,any,123456
+U016,Amna Shahid,passenger,Defence,Korangi,07:10,0,"Karsaz,Shah Faisal",female,any,123456
+U017,Imran Shah,driver,Saddar,North Nazimabad,08:45,2,"M.A Jinnah Road,Nazimabad",male,any,123456
+U018,Rabia Awan,passenger,Saddar,North Nazimabad,08:50,0,"M.A Jinnah Road,Nazimabad",female,female-only,123456
+U019,Faisal Iqbal,driver,Gulshan-e-Iqbal,Clifton,09:00,4,"Tariq Road,Shahra-e-Faisal",male,any,123456
+U020,Nadia Riaz,passenger,Gulshan-e-Iqbal,Clifton,09:15,0,"Tariq Road,Shahra-e-Faisal",female,any,123456
+U021,huma,passenger,Karachi,Karachi,08:00,0,,male,,12345

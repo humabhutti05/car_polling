@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+instance/
+.pytest_cache/
+.DS_Store
+*.csv
+!dataset.csv
+!rides.csv

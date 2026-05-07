@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sawaari — KRR Carpooling System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo-area">
+            <h1>SAWAARI</h1>
+            <span>Smart Carpooling AI • Karachi</span>
+        </div>
+        <div class="header-info" style="display: flex; align-items: center; gap: 1.5rem;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Hi, <strong>{{ user }}</strong></span>
+            <a href="/admin" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem; border: 1px solid var(--glass-border); padding: 4px 12px; border-radius: 20px; transition: 0.3s;">Admin Dashboard</a>
+            <a href="/logout" style="color: var(--danger); text-decoration: none; font-size: 0.85rem; border: 1px solid var(--danger); padding: 4px 12px; border-radius: 20px; transition: 0.3s; background: rgba(255,77,77,0.1);">Logout</a>
+        </div>
+    </header>
+
+    <section class="hero glass" style="background-image: url('{{ url_for('static', filename='carpooling_hero_bg.png') }}');">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h2>Find Your Commute Partner</h2>
+            <p>Smart Knowledge Representation & Reasoning (KRR) matching for your daily commute. Based on Jaccard Similarity and custom production rules.</p>
+        </div>
+    </section>
+
+    <nav class="tabs-nav">
+        <button class="tab-btn active" onclick="showTab('find')">Search Rides</button>
+    </nav>
+
+    <!-- TAB: Find a Ride -->
+    <div id="tab-find" class="panel active">
+        <div class="glass" style="padding: 2rem;">
+            <h3 style="margin-bottom: 1.5rem; color: var(--primary);">Enter Your Details</h3>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input id="f-name" value="Ahmed Ali" placeholder="e.g. Ahmed Ali">
+                </div>
+                <div class="input-group">
+                    <label>Select Your Role</label>
+                    <select id="f-role">
+                        <option value="passenger">Passenger</option>
+                        <option value="driver">Driver (All Drivers are Male)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Start Location</label>
+                    <input id="f-start" value="Saddar">
+                </div>
+                <div class="input-group">
+                    <label>Destination</label>
+                    <input id="f-end" value="Gulshan-e-Iqbal">
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Departure Time</label>
+                    <input id="f-time" type="time" value="08:10">
+                </div>
+                <div class="input-group">
+                    <label>Gender</label>
+                    <select id="f-gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Preference</label>
+                    <select id="f-pref">
+                        <option value="any">Any</option>
+                        <option value="female-only">Female Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group" style="margin-bottom: 1.5rem;">
+                <label>Route Waypoints (Comma separated)</label>
+                <input id="f-waypoints" value="Nishtar Road,University Road">
+            </div>
+            <button class="btn-main" onclick="findMatch()">
+                <div id="spin-find" class="spinner" style="display:none"></div>
+                <span>Find Best Matches</span>
+            </button>
+        </div>
+        <div id="find-results" class="results-container"></div>
+    </div>
+
+    <!-- TAB: Rules is now removed -->
+
+    <!-- TAB: Rules is now the last tab -->
+</div>
+
+<script>
+function showTab(t) {
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+    
+    // Find the button that was clicked
+    const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.toLowerCase().includes(t));
+    if (clickedBtn) clickedBtn.classList.add('active');
+    
+    document.getElementById('tab-' + t).classList.add('active');
+    if (t === 'dataset') loadDataset();
+}
+
+function statusBadge(s) {
+    const map = {
+        PERFECT_MATCH: ['badge-perfect', 'Perfect Match'],
+        PARTIAL_MATCH:  ['badge-partial',  'Partial Match'],
+        REJECTED:       ['badge-rejected', 'Rejected'],
+        BLOCKED:        ['badge-blocked',  'Blocked'],
+        FULL:           ['badge-full',     'Ride Full'],
+    };
+    const [cls, lbl] = map[s] || ['badge-full', s];
+    return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function resultCard(r) {
+    const pct = Math.round(r.jaccard_score * 100);
+    const partnerName = r.driver_id === 'QUERY' ? r.passenger_name : r.driver_name;
+    const roleLabel = r.driver_id === 'QUERY' ? 'Passenger' : 'Driver';
+    
+    return `
+    <div class="glass result-card">
+        <div class="result-header">
+            <div class="partner-info">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0,242,255,0.1); display: flex; align-items: center; justify-content: center; border: 1px solid var(--primary);">
+                    ${partnerName.charAt(0)}
+                </div>
+                <div>
+                    <div class="partner-name">${r.driver_name} ➔ ${r.passenger_name}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted)">${r.time_gap_min} mins gap • ${r.seats_available} seats</div>
+                </div>
+            </div>
+            ${statusBadge(r.status)}
+        </div>
+        
+        <div class="score-section">
+            <div class="score-bar-bg">
+                <div class="score-bar-fill" style="width: ${pct}%"></div>
+            </div>
+            <div class="score-value">${pct}%</div>
+        </div>
+        
+        <div style="margin-top: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 1rem; border: 1px solid var(--glass-border); font-family: 'monospace', sans-serif; font-size: 0.8rem;">
+            <div style="color: var(--primary); margin-bottom: 0.5rem; font-weight: 600;">🧠 KRR Reasoning Engine:</div>
+            <div style="color: var(--text-muted); line-height: 1.4;">
+                ${r.explanation.map(e => `<div>${e}</div>`).join('')}
+                <div style="margin-top: 0.5rem; color: var(--primary); font-weight: 700;">➔ RULE FIRED: ${r.rule_fired || 'None'}</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button id="book-btn-${partnerName}" class="btn-main" style="padding: 0.6rem 1.2rem; font-size: 0.8rem;" onclick="bookRide('${partnerName}', '${r.driver_id}', '${r.driver_name}')">
+                ✅ Book Ride
+            </button>
+            <button class="btn-main" style="padding: 0.6rem 1.2rem; font-size: 0.8rem; background: rgba(255,255,255,0.1); color: white;" onclick="shareLocation()">
+                🔗 Share Live Location
+            </button>
+        </div>
+
+        <div id="booking-details-${partnerName}" style="display: none; margin-top: 1.2rem; padding: 1.2rem; background: rgba(0,255,136,0.05); border-radius: 12px; border: 1px solid var(--success);">
+            <h4 style="color: var(--success); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px;">
+                🎉 Ride Booked Successfully!
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; color: var(--text-main);">
+                <div><strong>Rider Name:</strong> ${r.driver_name}</div>
+                <div><strong>Contact:</strong> +92 300 1234567</div>
+                <div><strong>Vehicle:</strong> White Corolla (KHI-789)</div>
+                <div><strong>Status:</strong> En route to you</div>
+            </div>
+            
+            <div id="tracking-${partnerName}" style="margin-top: 1rem; padding: 1rem; background: rgba(0,242,255,0.05); border-radius: 8px; border: 1px dashed var(--primary);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></div>
+                    <span style="font-size: 0.85rem; color: var(--primary);">Live Tracking: Rider is 2.4 km away...</span>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+async function bookRide(partnerId, driverId, driverName) {
+    const bookBtn = document.getElementById(`book-btn-${partnerId}`);
+    const details = document.getElementById(`booking-details-${partnerId}`);
+    
+    // Step 1: Save Booking to History
+    try {
+        await fetch('/api/book', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                driver_id: driverId,
+                driver_name: driverName,
+                passenger_id: 'CURRENT_USER', // In a real app, this would be the logged-in ID
+                passenger_name: document.getElementById('f-name').value
+            })
+        });
+        
+        bookBtn.disabled = true;
+        bookBtn.innerHTML = 'Booked';
+        bookBtn.style.opacity = '0.5';
+        
+        details.style.display = 'block';
+        details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {
+        alert('Booking failed. Please try again.');
+    }
+}
+
+function shareLocation() {
+    alert('Location sharing link copied to clipboard! (Safety Feature Enabled)');
+}
+
+async function findMatch() {
+    const spin = document.getElementById('spin-find');
+    const container = document.getElementById('find-results');
+    spin.style.display = 'inline-block';
+    
+    const payload = {
+        name: document.getElementById('f-name').value,
+        role: document.getElementById('f-role').value,
+        start_location: document.getElementById('f-start').value,
+        end_location:   document.getElementById('f-end').value,
+        departure_time: document.getElementById('f-time').value,
+        waypoints:      document.getElementById('f-waypoints').value,
+        gender:         document.getElementById('f-gender').value,
+        preference:     document.getElementById('f-pref').value,
+        available_seats: document.getElementById('f-role').value === 'driver' ? 3 : 0,
+    };
+    
+    try {
+        // Step 1: Save User to Database
+        await fetch('/api/add_user', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(payload)
+        });
+
+        // Step 2: Perform Match
+        const res = await fetch('/api/match', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(payload)
+        });
+        const data = await res.json();
+        spin.style.display = 'none';
+        
+        if (!data.length) {
+            container.innerHTML = '<div class="glass" style="padding: 2rem; text-align: center; color: var(--text-muted);">No results found for your route.</div>';
+            return;
+        }
+        
+        container.innerHTML = `<h3 style="margin-top: 1rem; color: var(--primary);">System Analysis: ${data.length} potential partners checked</h3>` + 
+                               data.map(resultCard).join('');
+    } catch (e) {
+        spin.style.display = 'none';
+        alert('Engine Error: Check console');
+    }
+}
+
+async function loadAllMatches() {
+    const spin = document.getElementById('spin-all');
+    spin.style.display = 'inline-block';
+    const res = await fetch('/api/full_match');
+    const data = await res.json();
+    spin.style.display = 'none';
+    
+    const perfect = data.filter(r => r.status === 'PERFECT_MATCH').length;
+    const partial = data.filter(r => r.status === 'PARTIAL_MATCH').length;
+    const rejected = data.filter(r => r.status === 'REJECTED').length;
+    const blocked = data.filter(r => r.status === 'BLOCKED').length;
+    
+    const statsEl = document.getElementById('all-stats');
+    statsEl.style.display = 'grid';
+    statsEl.innerHTML = `
+        <div class="glass stat-card"><div class="stat-value" style="color: var(--success)">${perfect}</div><div class="stat-label">Perfect</div></div>
+        <div class="glass stat-card"><div class="stat-value" style="color: var(--primary)">${partial}</div><div class="stat-label">Partial</div></div>
+        <div class="glass stat-card"><div class="stat-value" style="color: var(--danger)">${rejected}</div><div class="stat-label">Rejected</div></div>
+        <div class="glass stat-card"><div class="stat-value" style="color: var(--warning)">${blocked}</div><div class="stat-label">Blocked</div></div>
+    `;
+    
+    document.getElementById('all-results').innerHTML = data.map(resultCard).join('');
+}
+
+async function loadDataset() {
+    const res = await fetch('/api/users');
+    const data = await res.json();
+    const cols = ['user_id','name','role','start_location','end_location','departure_time','available_seats','gender'];
+    const header = cols.map(c => `<th>${c.toUpperCase().replace('_',' ')}</th>`).join('');
+    const rows = data.map(u => `<tr>${cols.map(c => `<td>${u[c]??''}</td>`).join('')}</tr>`).join('');
+    document.getElementById('dataset-table').innerHTML = `<table><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+</script>
+</body>
+</html>

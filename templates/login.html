@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Sawaari Carpooling</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .auth-container { max-width: 450px; margin: 100px auto; }
+        .toggle-auth { margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; }
+        .toggle-auth span { color: var(--primary); font-weight: 600; }
+        .auth-panel { padding: 3rem; }
+    </style>
+</head>
+<body style="background-image: url('{{ url_for('static', filename='carpooling_hero_bg.png') }}'); background-size: cover;">
+<div class="hero-overlay" style="background: rgba(10, 11, 16, 0.85);"></div>
+
+<div class="container auth-container" style="position: relative; z-index: 10;">
+    <div class="logo-area" style="text-align: center; margin-bottom: 2rem;">
+        <h1>SAWAARI</h1>
+        <span>Smart Carpooling AI</span>
+    </div>
+
+    <div class="glass auth-panel" id="login-form">
+        <h2 style="margin-bottom: 2rem; text-align: center;">Welcome Back</h2>
+        <div class="input-group" style="margin-bottom: 1.2rem;">
+            <label>Full Name</label>
+            <input type="text" id="l-name" placeholder="Enter your name">
+        </div>
+        <div class="input-group" style="margin-bottom: 2rem;">
+            <label>Password</label>
+            <input type="password" id="l-pass" placeholder="••••••••">
+        </div>
+        <button class="btn-main" style="width: 100%;" onclick="login()">Login to Account</button>
+        <div class="toggle-auth" onclick="toggleAuth('signup')">Don't have an account? <span>Sign Up</span></div>
+    </div>
+
+    <div class="glass auth-panel" id="signup-form" style="display: none;">
+        <h2 style="margin-bottom: 2rem; text-align: center;">Create Account</h2>
+        <div class="input-group" style="margin-bottom: 1rem;">
+            <label>Full Name</label>
+            <input type="text" id="s-name" placeholder="Full Name">
+        </div>
+        <div class="form-grid" style="margin-bottom: 1rem;">
+            <div class="input-group">
+                <label>Role</label>
+                <select id="s-role">
+                    <option value="passenger">Passenger</option>
+                    <option value="driver">Rider (Driver)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Gender</label>
+                <select id="s-gender">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+        </div>
+        <div class="input-group" style="margin-bottom: 1.5rem;">
+            <label>Set Password</label>
+            <input type="password" id="s-pass" placeholder="••••••••">
+        </div>
+        <button class="btn-main" style="width: 100%;" onclick="signup()">Create Account</button>
+        <div class="toggle-auth" onclick="toggleAuth('login')">Already have an account? <span>Login</span></div>
+    </div>
+</div>
+
+<script>
+function toggleAuth(type) {
+    document.getElementById('login-form').style.display = type === 'login' ? 'block' : 'none';
+    document.getElementById('signup-form').style.display = type === 'signup' ? 'block' : 'none';
+}
+
+async function login() {
+    const name = document.getElementById('l-name').value;
+    const password = document.getElementById('l-pass').value;
+    
+    const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, password })
+    });
+    const data = await res.json();
+    if (data.success) {
+        window.location.href = '/';
+    } else {
+        alert(data.message);
+    }
+}
+
+async function signup() {
+    const payload = {
+        name: document.getElementById('s-name').value,
+        role: document.getElementById('s-role').value,
+        gender: document.getElementById('s-gender').value,
+        password: document.getElementById('s-pass').value,
+        start_location: 'Karachi', // Defaults for new profile
+        end_location: 'Karachi',
+        departure_time: '08:00',
+        available_seats: document.getElementById('s-role').value === 'driver' ? 3 : 0
+    };
+    
+    const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+        window.location.href = '/';
+    } else {
+        alert(data.message);
+    }
+}
+</script>
+</body>
+</html>
